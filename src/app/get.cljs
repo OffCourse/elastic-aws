@@ -2,34 +2,40 @@
   (:refer-clojure :exclude [get])
   (:require [app.db :as db]
             [com.rpl.specter :refer [ALL select-first]]
-            [cljs.core.async :refer [<! chan >!]]
+            [cljs.core.async :refer [<! close! put! chan >!]]
             [clojure.walk :as walk]
             [cljs.nodejs :as node]
             [clojure.set :as set])
   (:require-macros [cljs.core.async.macros :refer [go]]))
 
-(def http (node/require "http"))
+(def ^:private js-request (node/require "request"))
 
-(defn handle-response [response]
-  (let [{:keys [type error] :as response} (-> response
-                                              walk/keywordize-keys)]
-    (if ((keyword type) response)
-      ((keyword type) response)
-      {:error :not-found})))
-
-(defn fetch [{:keys [endpoint]} query]
-  (let [c (chan)]
-    (go
-      (println (.request http (clj->js {:method "GET"
-                                        :host "google.com"})))
-      (>! c "HI"))
-    c))
+(defn request [url-or-opts]
+  (let [c-resp (chan 1)]
+    (js-request (clj->js url-or-opts)
+                (fn [error response body]
+                  (put! c-resp
+                              (if error
+                                {:error error}
+                                {:response response :body body})
+                              #(close! c-resp))))
+    c-resp))
 
 (defmulti get (fn [{:keys [type]}] (keyword type)))
 
 (defmethod get :collection [{:keys [type collection] :as event}]
   (go
-    (-> (<! (fetch "ho" "hi")))))
+    (let [{:keys [body]} (<! (request {:url "https://89aaedd97ab45326945f499c51e376b0.us-east-1.aws.found.io:9243/offcourse/courses/_search"
+                                       :auth {:user "user1"
+                                              :pass "test"}}))
+          json (.parse js/JSON body)
+          hits (-> json
+                   js->clj
+                   walk/keywordize-keys
+                   :hits
+                   :hits)]
+      (map :_source hits))))
+
 
 (defmethod get :course [{:keys [course] :as event}]
   (let [{:keys [course-slug curator]} course]

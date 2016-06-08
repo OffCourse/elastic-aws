@@ -16,7 +16,8 @@
   "dependencies": {
     "dynamodb-doc": "^1.0.0",
     "js-yaml": "^3.5.5",
-    "node-lambda": "0.1.5"
+    "node-lambda": "0.1.5",
+    "request": "^2.72.0"
   },
   "scripts": {
     "setup": "node-lambda setup",
