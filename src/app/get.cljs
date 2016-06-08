@@ -18,11 +18,12 @@
       {:error :not-found})))
 
 (defn fetch [{:keys [endpoint]} query]
-  (.request http (clj->js {:method "GET"
-                           :host "http://www.google.com"})
-            #(println %2))
-  (go
-    (str "I")))
+  (let [c (chan)]
+    (go
+      (println (.request http (clj->js {:method "GET"
+                                        :host "google.com"})))
+      (>! c "HI"))
+    c))
 
 (defmulti get (fn [{:keys [type]}] (keyword type)))
 
