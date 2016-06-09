@@ -23,29 +23,43 @@
 
 (defmulti get (fn [{:keys [type]}] (keyword type)))
 
+(def endpoint "https://89aaedd97ab45326945f499c51e376b0.us-east-1.aws.found.io:9243/offcourse/courses/_search")
+
+(def auth {:user "user1"
+            :pass "test"})
+
+(defn extract-courses [response]
+  (let [json (.parse js/JSON response)
+        hits (-> json
+                 js->clj
+                 walk/keywordize-keys
+                 :hits
+                 :hits)]
+    (map :_source hits)))
+
 (defmethod get :collection [{:keys [type collection] :as event}]
   (go
-    (let [{:keys [body]} (<! (request {:url "https://89aaedd97ab45326945f499c51e376b0.us-east-1.aws.found.io:9243/offcourse/courses/_search"
-                                       :auth {:user "user1"
-                                              :pass "test"}}))
-          json (.parse js/JSON body)
-          hits (-> json
-                   js->clj
-                   walk/keywordize-keys
-                   :hits
-                   :hits)]
-      (map :_source hits))))
-
+    (let [{:keys [collection-type collection-name]} collection
+          query-key (case (keyword collection-type)
+                      :flags :flags
+                      :tags :checkpoints.tags
+                      :curators :curator)
+          query {:query {:bool {:should [{:match {query-key collection-name}}]}}}
+          {:keys [body]} (<! (request {:url  endpoint
+                                       :body (.stringify js/JSON (clj->js query))
+                                       :auth auth}))]
+      (extract-courses body))))
 
 (defmethod get :course [{:keys [course] :as event}]
-  (let [{:keys [course-slug curator]} course]
-    (go
-      (let [courses (<! (get {:type :courses}))]
-        (select-first [ALL #(and (= (:course-slug %) course-slug)
-                                 (= (:curator %) curator))] courses)))))
-
+  (go
+    (let [{:keys [course-slug curator]} course
+          query {:query {:bool {:must [{:match {:course-slug course-slug}}
+                                       {:match {:curator curator}}]}}}
+          {:keys [body]} (<! (request {:url endpoint
+                                       :body (.stringify js/JSON (clj->js query))
+                                       :auth auth}))]
+      (first (extract-courses body)))))
 
 (defmethod get :default [event]
   (go
-    (let [db (<! (db/s3->))]
-      db)))
+    {:error :query-not-supported}))
