@@ -23,10 +23,10 @@
 
 (defmulti get (fn [{:keys [type]}] (keyword type)))
 
-(def endpoint "https://89aaedd97ab45326945f499c51e376b0.us-east-1.aws.found.io:9243/offcourse/courses/_search")
+(def endpoint (.. js/process -env -ELS_ENDPOINT))
 
 (def auth {:user "user1"
-            :pass "test"})
+           :pass "test"})
 
 (defn extract-courses [response]
   (let [json (.parse js/JSON response)
