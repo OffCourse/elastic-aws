@@ -22,6 +22,6 @@
   "scripts": {
     "setup": "node-lambda setup",
     "run": "node-lambda run",
-    "deploy": "node-lambda deploy"
+    "deploy": "node-lambda deploy -f production.env"
   }
 }

@@ -31,8 +31,9 @@ node_modules
 # Users Environment Variables
 .lock-wscript
 .env
-deploy.env
-
+production.env
+staging.env
+development.env
 
 .env
 .DS_Store
