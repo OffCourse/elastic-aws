@@ -1,7 +1,3 @@
 {
-    "type": "collection",
-    "collection": {
-        "collection-type": "tags",
-        "collection-name": "4g"
-    }
+    "type": "user-profile"
 }

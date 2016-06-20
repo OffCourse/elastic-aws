@@ -37,6 +37,10 @@
                  :hits)]
     (map :_source hits)))
 
+(defmethod get :user-profile [_]
+  (go
+    {:user-name "yeehaa"}))
+
 (defmethod get :collection [{:keys [type collection] :as event}]
   (go
     (let [{:keys [collection-type collection-name]} collection
