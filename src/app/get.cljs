@@ -34,11 +34,18 @@
 (defn get-user-profile [user-id]
   (let [c (chan)
         query {:TableName "user-profiles"
-               :Key {:user-id user-id}}]
-    (.getItem dynamo (clj->js query) #(go (>! c
+               :IndexName "user-id-index"
+               :KeyConditionExpression "#ui = :id"
+               :ExpressionAttributeNames {"#ui" "user-id"}
+               :ExpressionAttributeValues {":id" user-id}}]
+    (.query dynamo (clj->js query) #(go (>! c
                                               (if %1
-                                                %1
-                                                %2))))
+                                                (do
+                                                  (println %1)
+                                                  %1)
+                                                (do
+                                                (println %2)
+                                                %2)))))
     c))
 
 (defmethod get :user-profile [{:keys [auth-token]}]
@@ -50,7 +57,8 @@
              get-user-profile
              <!
              (js->clj :keywordize-keys true)
-             :Item)))
+             :Items
+             first)))
 
 (defmethod get :collection [{:keys [type collection] :as event}]
   (go
