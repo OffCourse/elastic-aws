@@ -3,14 +3,54 @@
   (:require [app.queries :as queries]
             [app.extract :as extract]
             [app.elastic-search :as es]
-            [cljs.core.async :refer [<!]])
+            [cljs.nodejs :as node]
+            [cljs.core.async :refer [<! chan]])
   (:require-macros [cljs.core.async.macros :refer [go]]))
+
+(def ^:private jwt (node/require "jsonwebtoken"))
+(def ^:private AWS (node/require "aws-sdk"))
+(def ^:private doc (node/require "dynamodb-doc"))
+(def dynamo (.DynamoDB doc))
 
 (defmulti get (fn [{:keys [type]}] (keyword type)))
 
-(defmethod get :user-profile [_]
+(defn validate-token [token secret]
+  (let [secret-buffer (js/Buffer. secret "base64")
+        c (chan)]
+    (.verify jwt token secret-buffer (fn [err decoded]
+                                       (go
+                                         (if err
+                                           (>! c err)
+                                           (>! c decoded)))))
+    c))
+
+(def auth-secret (.. js/process -env -AUTH0_SECRET))
+
+(defn extract-user-id [decoded-token]
+  (-> decoded-token
+      (js->clj :keywordize-keys true)
+      :sub))
+
+(defn get-user-profile [user-id]
+  (let [c (chan)
+        query {:TableName "user-profiles"
+               :Key {:user-id user-id}}]
+    (.getItem dynamo (clj->js query) #(go (>! c
+                                              (if %1
+                                                %1
+                                                %2))))
+    c))
+
+(defmethod get :user-profile [{:keys [auth-token]}]
   (go
-    {:user-name "yeehaa"}))
+    (-> auth-token
+             (validate-token auth-secret)
+             <!
+             extract-user-id
+             get-user-profile
+             <!
+             (js->clj :keywordize-keys true)
+             :Item)))
 
 (defmethod get :collection [{:keys [type collection] :as event}]
   (go
