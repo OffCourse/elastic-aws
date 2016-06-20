@@ -9,3 +9,15 @@
                  :hits
                  :hits)]
     (map :_source hits)))
+
+
+(defn user-id [token]
+  (-> token
+      (js->clj :keywordize-keys true)
+      :sub))
+
+(defn user-profile [res]
+  (-> res
+      (js->clj :keywordize-keys true)
+      :Items
+      first))
