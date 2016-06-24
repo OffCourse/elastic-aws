@@ -9,7 +9,6 @@
 (defn jwt-token [token]
   (let [secret-buffer (js/Buffer. auth-secret "base64")
         c (chan)]
-    (println secret-buffer)
     (.verify jwt token secret-buffer (fn [err decoded]
                                        (go
                                          (if err

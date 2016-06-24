@@ -23,11 +23,13 @@
 
 (defmethod get :collection [{:keys [type collection] :as event}]
   (go
-    (-> collection
-        queries/collection
-        es/request
-        <!
-        extract/courses)))
+    (let [courses(-> collection
+                     queries/collection
+                     es/request
+                     <!
+                     extract/courses)]
+      (when-not (empty? courses)
+        courses))))
 
 (defmethod get :course [{:keys [course] :as event}]
   (go

@@ -1,3 +1,7 @@
-{"type": "user-profile",
- "auth-token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL3llZWhhYS5ldS5hdXRoMC5jb20vIiwic3ViIjoiZ2l0aHVifDE3ODAzNTgiLCJhdWQiOiJaMUowQ3lNelpmSWJPZkJTVmFNV0pha29JcnhtNFRmcyIsImV4cCI6MTQ2NjgwODM5MSwiaWF0IjoxNDY2NzcyMzkxfQ.Dm541CfWpbOkdFZCnnQXowZyze1VPYGhVyfqGAnGmwU"}
-
+{
+    "type": "collection",
+    "collection": {
+        "collection-type": "flags",
+        "collection-name": "featured"
+    }
+}
