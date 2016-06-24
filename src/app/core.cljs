@@ -14,8 +14,9 @@
     (let [{:keys [type] :as event} (utils/->js event)
           type (if (= type "collection") :courses type)
           data (<! (get event))
-          response {:type type
-                    type data}]
+          response {:type :found-data
+                    :payload {:type type
+                              type data}}]
       (cb nil (clj->js response)))))
 
 (defn -main [] identity)
